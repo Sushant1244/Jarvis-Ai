@@ -32,18 +32,25 @@ def create_voice(self, gtts_status, rate=180, lang='en', gender='female'):
     :param rate: Speech rate for the engine (if supported by the OS)
     """
 
-    if PYDUB_AVAILABLE and gtts_status is True:
-        return VoiceGTTS(lang=lang)
+    # Normalize some language aliases
+    normalized_lang = (lang or 'en').strip().lower()
+    if normalized_lang in ('hi-en', 'hinglish'):
+        normalized_lang = 'hi'
+
+    # For non-English languages prefer gTTS (Google TTS) when available.
+    if normalized_lang != 'en' and PYDUB_AVAILABLE and gtts_status is True:
+        return VoiceGTTS(lang=normalized_lang)
+
+    # For English or when gTTS is disabled/unavailable, fall back to platform TTS
+    if IS_MACOS:
+        return VoiceMac(lang=normalized_lang, gender=gender)
+    elif IS_WIN:
+        return VoiceWin(rate, gender=gender)
     else:
-        if IS_MACOS:
-            return VoiceMac(lang=lang, gender=gender)
-        elif IS_WIN:
-            return VoiceWin(rate, gender=gender)
-        else:
-            try:
-                return VoiceLinux(rate, gender=gender)
-            except OSError:
-                return VoiceNotSupported()
+        try:
+            return VoiceLinux(rate, gender=gender)
+        except OSError:
+            return VoiceNotSupported()
 
 
 def remove_ansi_escape_seq(text):
@@ -70,15 +77,26 @@ def remove_ansi_escape_seq(text):
 
 class VoiceGTTS():
     def __init__(self, lang='en'):
-        self.lang = lang or 'en'
+        # Accept aliases like 'hinglish' or 'hi-en' and map to Hindi ('hi')
+        l = (lang or 'en').strip().lower()
+        if l in ('hi-en', 'hinglish'):
+            l = 'hi'
+        self.lang = l or 'en'
 
     def text_to_speech(self, speech):
         speech = remove_ansi_escape_seq(speech)
-        tts = gTTS(speech, lang=self.lang)
-        tts.save("voice.mp3")
-        audio = AudioSegment.from_mp3('voice.mp3')
-        playback.play(audio)
-        os.remove("voice.mp3")
+        try:
+            tts = gTTS(speech, lang=self.lang)
+            tts.save("voice.mp3")
+            audio = AudioSegment.from_mp3('voice.mp3')
+            playback.play(audio)
+            os.remove("voice.mp3")
+        except Exception:
+            # Silent fallback: if gTTS or pydub fail, print text so user knows
+            try:
+                print('[TTS fallback] ' + speech)
+            except Exception:
+                pass
 
 
 class VoiceMac():

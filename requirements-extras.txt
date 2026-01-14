@@ -1,0 +1,6 @@
+pydub
+simpleaudio
+gtts
+# Optional: VOSK and Porcupine for offline STT/wake-word (models required)
+# vosk
+# pvporcupine

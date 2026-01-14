@@ -145,6 +145,19 @@ def main():
     jarvis.say("Pratigya is listening for the wake word.")
 
     memory = load_memory()
+    # conversation history (list of dicts: {'role':'user'|'assistant','content':...})
+    convo_history = memory.get('conversation_history', []) if isinstance(memory, dict) else []
+    MAX_HISTORY = 6
+
+    # prepare streaming helpers
+    try:
+        from jarviscli.utilities import ai as ai_util
+        from jarviscli.utilities.tts_controller import TTSController
+        tts_ctrl = TTSController(jarvis._api)
+        tts_ctrl.start()
+    except Exception:
+        ai_util = None
+        tts_ctrl = None
 
     r = sr.Recognizer()
     try:
@@ -193,7 +206,86 @@ def main():
                 if wake:
                     cmd = strip_wake(text, wake)
                     if not cmd:
+                        # brief conversational mode after wake word
                         jarvis.say('Yes?')
+                        conv_start = time.time()
+                        # allow a short window for follow-up replies (20s max)
+                        while True:
+                            # stop if we've been in conversation too long
+                            if time.time() - conv_start > 20:
+                                break
+                            try:
+                                # listen for a short reply (timeout waits for phrase start)
+                                audio2 = r.listen(source, timeout=5, phrase_time_limit=8)
+                            except sr.WaitTimeoutError:
+                                # no reply arrived in time
+                                break
+                            try:
+                                # interruption: stop TTS while listening
+                                if tts_ctrl:
+                                    tts_ctrl.stop()
+                                reply = r.recognize_google(audio2).lower()
+                            except sr.UnknownValueError:
+                                # didn't understand, prompt once then continue listening
+                                jarvis.say("I didn't catch that. Please repeat.")
+                                conv_start = time.time()
+                                continue
+                            except sr.RequestError as e:
+                                jarvis.say('Speech service is unavailable right now.')
+                                break
+
+                            print('Heard reply:', reply)
+                            # allow graceful exit words
+                            if reply.strip() in ('exit', 'quit', 'stop'):
+                                jarvis.say('Okay.')
+                                break
+                            # If ai_stream available, use AI to generate a conversational reply
+                            if ai_util and tts_ctrl:
+                                # include conversation history and the new user turn
+                                context = list(convo_history)
+                                context.append({'role': 'user', 'content': reply})
+                                # trim history
+                                if len(context) > MAX_HISTORY:
+                                    context = context[-MAX_HISTORY:]
+                                # add the user turn to persistent history
+                                convo_history.append({'role': 'user', 'content': reply})
+                                if len(convo_history) > MAX_HISTORY:
+                                    convo_history = convo_history[-MAX_HISTORY:]
+                                # persist into memory dict
+                                try:
+                                    memory['conversation_history'] = convo_history
+                                    save_memory(memory)
+                                except Exception:
+                                    pass
+                                try:
+                                    # play a short chime using sounds helper if available
+                                    try:
+                                        from jarviscli.utilities.sounds import play_chime
+                                        play_chime()
+                                    except Exception:
+                                        pass
+                                    for chunk in ai_util.ai_stream(reply, context=context):
+                                        if not chunk:
+                                            continue
+                                        tts_ctrl.enqueue(chunk)
+                                        # also add assistant chunk to history (best-effort)
+                                        convo_history.append({'role': 'assistant', 'content': chunk})
+                                        if len(convo_history) > MAX_HISTORY:
+                                            convo_history = convo_history[-MAX_HISTORY:]
+                                        try:
+                                            memory['conversation_history'] = convo_history
+                                            save_memory(memory)
+                                        except Exception:
+                                            pass
+                                except Exception:
+                                    # fallback to regular processing
+                                    process_command(jarvis, reply, memory)
+                            else:
+                                # process the follow-up as a command
+                                process_command(jarvis, reply, memory)
+                            # reset conv timer to allow more quick replies
+                            conv_start = time.time()
+                        # end conversational window
                     else:
                         print('Running command:', cmd)
                         process_command(jarvis, cmd, memory)

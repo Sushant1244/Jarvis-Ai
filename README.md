@@ -42,171 +42,68 @@ Jarvis is a simple personal assistant for Linux, MacOS and Windows which works o
     - Manage and organize files (`file manage`, `file organize`)
 
 11. **Image Processing**
-    - Upload, edit, and convert images (`imgur`, `image to pdf`, `image compressor`)
+   # Jarvis (Pratigya) — Personal Assistant
 
-12. **PDF Conversion**
-    - Convert webpages to PDF or PDFs to images (`htmltopdf`, `pdf to images`)
+   ![Jarvis Icon](icons/default.ico)
 
-13. **Jokes & Facts**
-    - Enjoy jokes and random facts (`dadjoke`, `joke daily`, `joke chuck`, `joke`, `fact`, `cat fact`)
+   This repository contains a personal assistant CLI named Jarvis (renamed locally as "Pratigya").
 
-14. **Calculations**
-    - Perform calculations and solve equations (`calculate`, `factor`, `solve`, `equations`, `plot`, `matrix add`)
+   This README has been simplified. See `doc/` for project documentation and plugin guidelines.
 
-15. **QR Code Generation**
-    - Generate QR codes for URLs (`qr`)
+   Quick summary
+   - Purpose: a command-line personal assistant with optional voice and speech features.
+   - Language: Python 3.10+
 
-16. **Weather Updates**
-    - Check the weather forecast (`weather report`)
-
-17. **Language Translation**
-    - Translate languages (`translate`)
-
-18. **Stock Market Information**
-    - Display stock and cryptocurrency information (`stock`, `cryptotracker`)
-
-## 🛠️ Getting Started
-
-### Installation
-
-1. **Clone the Repository**
+   Quick start
+   1. Create and activate a Python virtual environment:
 
    ```bash
-   git clone https://github.com/sukeesh/Jarvis.git
+   python3 -m venv .venv
+   source .venv/bin/activate
    ```
 
-2. **Run the installer**
+   2. Install required packages (the project uses the `installer` and `requirements.txt`):
+
    ```bash
-   python installer
+   python -m pip install -r installer/requirements.txt || python -m pip install -r requirements.txt
    ```
-   If that doesn't work, try:
+
+   3. Run the CLI (module mode recommended):
+
    ```bash
-   python3 installer
+   python -m jarviscli
    ```
 
-### Running Jarvis
+   Or use the quick runners added for development:
 
-- Run Jarvis from anywhere:
-  
+   - `run_with_sound.py` — tests speech output.
+   - `listener.py` — simple wake-word + speech listener prototype.
+
+   Notes
+   - Many plugins have optional system dependencies. Install `ffmpeg`, `portaudio`, or platform-specific TTS engines as needed.
+   - To enable OpenAI fallback for question answering set the `OPENAI_API_KEY` environment variable.
+
+   Optional audio features
+   -----------------------
+   The project includes lower-latency and interruptible TTS playback when optional Python packages are installed. To enable the best experience (streamed TTS, stoppable playback, chime sounds), install the extras below.
+
+   Recommended optional packages (not required):
+
    ```bash
-   jarvis
+   python -m pip install -r requirements-extras.txt
    ```
 
-  Or from within the project folder:
-  
-   ```bash
-   ./jarvis
-   ```
+   These packages enable:
+   - stoppable, buffered playback (via `simpleaudio`)
+   - chunked gTTS rendering and WAV handling (`gTTS`, `pydub`)
+   - improved chime playback
 
-You can start by typing `help` within the Jarvis command line to check what Jarvis can do for you.
+   Contributing
+   - Follow `CONTRIBUTING.md` and add plugins under `custom/` while testing locally.
 
-## ❓Frequently encountered issues
-**Question**: 
-When I run Jarvis, it shows an error relating to module not found<br>
+   License
+   - No license is currently specified in this repository. If you want a specific license added, update the top-level `LICENSE` file accordingly.
 
-**Platform**: 
-Windows<br>
+   Contact
+   - See the Git history and `doc/` for author and contributor information.
 
-**Solution 1**: Uninstall and/or install the module package.<br>
-
-**Example:**<br>
-Error: `ImportError: DLL load failed while importing win32api: The specified module could not be found.`<br>
-
-**Solution:**<br>
-`pip uninstall pywin32`<br>
-`pip install pywin32` or `conda install pywin32`<br>
-
-**Solution 2**: add the package to your environment variables system PATH.<br>
-
------
-
-**Question**: After cloning the repo in terminal it gives an error when running python3 installer saying please install virtual environemnt.
-
-**Solution**: 
-- Install virtual env using this command:
-  ```bash
-  python3 -m pip install virtualenv
-  ```
-- OR: On Linux use package manager (e.g. Ubuntu sudo apt install python3-venv)
-  
-- Restart Installer
-
------
-
-**If you find other issues and/or have found solutions to them on any platform, please consider adding to this list!**
-
-## 💻 Youtube Video Showing Jarvis
-
-[Click here](https://www.youtube.com/watch?v=PR-nxqmG3V8)
-
-## 🤝 Contributing
-
-Check out our [CONTRIBUTING.md](CONTRIBUTING.md) to learn how you can contribute!
-
-### QuickStart: Create a new feature (plugin)
-
-Create new file custom/hello_world.py
-
-```
-from plugin import plugin
-
-
-@plugin("helloworld")
-def helloworld(jarvis, s):
-    """Repeats what you type"""
-    jarvis.say(s)
-```
-
-Check it out!
-```
-./jarvis
-Jarvis' sound is by default disabled.
-In order to let Jarvis talk out loud type: enable sound
-Type 'help' for a list of available actions.
-
-~> Hi, what can I do for you?
-helloworld Jarvis is cool!
-jarvis is cool
-```
-
-### Plugins
-
-[Click here](doc/PLUGINS.md) to learn more about plugins.
-
-### Creating a test
-
-Creating a test is optional but never a bad idea ;).
-
-[Click here](doc/TESTING.md) to learn more about testing.
-
-### How to run tests:
-
- Run `test.sh`
- ```bash
- ./test.sh
- ```
-## Optional Dependencies
-
-- Any pyttsx3 text-to-speech engine (``sapi5, nsss or espeak``) for Jarvis to talk out loud (e.g. Ubuntu do ``sudo apt install espeak``)
-- Portaudio + python-devel packages for voice control
-- ``notify-send`` on Linux if you want to receive *nice* and desktop-notification instead of *ugly* pop up windows (e.g. Ubuntu do ``sudo apt install libnotify-bin``)
-- ``ffmpeg`` if you want ``music`` to download songs as .mp3 instead of .webm
-
-## Docker
-
-Run with docker (docker needs to be installed and running):
-
-```
-[sudo] make build_docker
-[sudo] make run_docker
-```
-
-## Authors
-
- **sukeesh**
-
-See also the list of [contributors](https://github.com/sukeesh/Jarvis/graphs/contributors) who have participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
