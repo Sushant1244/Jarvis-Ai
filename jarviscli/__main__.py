@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-import Jarvis
+from . import Jarvis
 import colorama
 import sys
-from jarviscli.plugins.message import send_join_message
+import os
+from .plugins.message import send_join_message
 
 
 def check_python_version():
@@ -12,8 +13,8 @@ def check_python_version():
 def main():
     # enable color on windows
     colorama.init()
-    # start Jarvis
-    jarvis = Jarvis.Jarvis()
+    # start Jarvis (load only core plugins to reduce import errors)
+    jarvis = Jarvis.Jarvis(directories=[os.path.join(os.path.dirname(__file__), 'plugins')])
 
     # Send Telegram message on startup
     send_join_message()

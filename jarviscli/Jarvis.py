@@ -2,12 +2,13 @@
 
 import os
 from colorama import Fore
+from .utilities import ai as ai_util
 import nltk
 import re
 import sys
 import tempfile
-from utilities.GeneralUtilities import print_say
-from CmdInterpreter import CmdInterpreter
+from .utilities.GeneralUtilities import print_say
+from .CmdInterpreter import CmdInterpreter
 
 # register hist path
 HISTORY_FILENAME = tempfile.TemporaryFile('w+t')
@@ -35,17 +36,17 @@ class Jarvis(CmdInterpreter, object):
     # allows Jarvis say "Hi", only at the first interaction.
     first_reaction_text = ""
     first_reaction_text += Fore.CYAN + \
-        'Jarvis\' sound is by default disabled.' + Fore.RESET
+        "Pratigya's sound is by default disabled." + Fore.RESET
     first_reaction_text += "\n"
-    first_reaction_text += Fore.CYAN + 'In order to let Jarvis talk out loud type: '
+    first_reaction_text += Fore.CYAN + 'In order to let Pratigya talk out loud type: '
     first_reaction_text += Fore.RESET + Fore.MAGENTA + 'enable sound' + Fore.RESET
     first_reaction_text += "\n"
     first_reaction_text += Fore.CYAN + \
         "Type 'help' for a list of available actions." + Fore.RESET
     first_reaction_text += "\n"
     prompt = (
-        Fore.MAGENTA
-        + "{} Hi, what can I do for you?\n".format(PROMPT_CHAR)
+    Fore.MAGENTA
+    + "{} Hi, what can I do for you?\n".format(PROMPT_CHAR)
         + Fore.RESET)
 
     # Used to store user specific data
@@ -79,6 +80,15 @@ class Jarvis(CmdInterpreter, object):
 
     def default(self, data):
         """Jarvis let's you know if an error has occurred."""
+        # try AI responder first (if configured)
+        try:
+            response = ai_util.ai_answer(data)
+            if response:
+                print_say(response, self, Fore.MAGENTA)
+                return
+        except Exception:
+            pass
+
         print_say("I could not identify your command...", self, Fore.MAGENTA)
 
     def precmd(self, line):

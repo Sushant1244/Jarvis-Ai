@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import distutils.spawn
+import shutil
 import os
 from platform import win32_ver
 import sys
@@ -76,7 +76,8 @@ def unsupported(platform, silent=False):
 
 
 def executable_exists(name):
-    binary_path = distutils.spawn.find_executable(name)
+    # use shutil.which which is available and supported in modern Python
+    binary_path = shutil.which(name)
     return binary_path is not None and os.access(binary_path, os.X_OK)
 
 

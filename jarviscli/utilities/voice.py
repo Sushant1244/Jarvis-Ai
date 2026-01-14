@@ -1,5 +1,5 @@
 import re
-from utilities.GeneralUtilities import IS_MACOS, IS_WIN
+from .GeneralUtilities import IS_MACOS, IS_WIN
 import os
 import subprocess
 from gtts import gTTS
@@ -26,22 +26,22 @@ else:
     import pyttsx3
 
 
-def create_voice(self, gtts_status, rate=180):
+def create_voice(self, gtts_status, rate=180, lang='en', gender='female'):
     """
     Checks that status of gtts engine, and calls the correct speech engine
     :param rate: Speech rate for the engine (if supported by the OS)
     """
 
     if PYDUB_AVAILABLE and gtts_status is True:
-        return VoiceGTTS()
+        return VoiceGTTS(lang=lang)
     else:
         if IS_MACOS:
-            return VoiceMac()
+            return VoiceMac(lang=lang, gender=gender)
         elif IS_WIN:
-            return VoiceWin(rate)
+            return VoiceWin(rate, gender=gender)
         else:
             try:
-                return VoiceLinux(rate)
+                return VoiceLinux(rate, gender=gender)
             except OSError:
                 return VoiceNotSupported()
 
@@ -69,9 +69,12 @@ def remove_ansi_escape_seq(text):
 #     """
 
 class VoiceGTTS():
+    def __init__(self, lang='en'):
+        self.lang = lang or 'en'
+
     def text_to_speech(self, speech):
         speech = remove_ansi_escape_seq(speech)
-        tts = gTTS(speech, lang="en")
+        tts = gTTS(speech, lang=self.lang)
         tts.save("voice.mp3")
         audio = AudioSegment.from_mp3('voice.mp3')
         playback.play(audio)
@@ -79,6 +82,10 @@ class VoiceGTTS():
 
 
 class VoiceMac():
+    def __init__(self, lang='en', gender='female'):
+        self.lang = lang
+        self.gender = gender
+
     def text_to_speech(self, speech):
         speech = remove_ansi_escape_seq(speech)
         speech = speech.replace("'", "\\'")
@@ -105,7 +112,8 @@ class Voice_general():
 
 
 class VoiceLinux(Voice_general):
-    def __init__(self, rate):
+    def __init__(self, rate, gender='female'):
+        self.gender = gender
         super().__init__(rate)
 
     def text_to_speech(self, speech):
@@ -119,6 +127,20 @@ class VoiceLinux(Voice_general):
         if speech != '':
             speech = remove_ansi_escape_seq(speech)
             self.create()
+            # try to choose a female voice if requested
+            try:
+                voices = self.engine.getProperty('voices')
+                chosen = None
+                if hasattr(self, 'gender') and self.gender:
+                    for v in voices:
+                        name = getattr(v, 'name', '') or getattr(v, 'id', '')
+                        if 'female' in name.lower() or 'f' == name.lower():
+                            chosen = v.id
+                            break
+                if chosen:
+                    self.engine.setProperty('voice', chosen)
+            except Exception:
+                pass
             self.engine.say(speech)
             self.engine.runAndWait()
             self.destroy()
@@ -140,8 +162,9 @@ class VoiceLinux(Voice_general):
 
 class VoiceWin():
 
-    def __init__(self, rate):
+    def __init__(self, rate, gender='female'):
         self.rate = rate
+        self.gender = gender
         self.min_rate = 50
         self.max_rate = 500
         self.create()
@@ -170,8 +193,19 @@ class VoiceWin():
         speech = remove_ansi_escape_seq(speech)
         self.create()
         self.engine.setProperty('rate', 170)  # setting up new voice rate
-        voices = self.engine.getProperty('voices')  # getting details of current voice
-        self.engine.setProperty('voices', voices[1].id)  # changing index, changes voices. 1 for female
+        try:
+            voices = self.engine.getProperty('voices')  # getting details of current voice
+            chosen = None
+            if hasattr(self, 'gender') and self.gender:
+                for v in voices:
+                    name = getattr(v, 'name', '') or getattr(v, 'id', '')
+                    if 'female' in name.lower() or 'f' == name.lower():
+                        chosen = v.id
+                        break
+            if chosen:
+                self.engine.setProperty('voice', chosen)
+        except Exception:
+            pass
         self.engine.say(speech)
         self.engine.runAndWait()
         self.destroy()

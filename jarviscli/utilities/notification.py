@@ -1,4 +1,4 @@
-from utilities.GeneralUtilities import IS_MACOS, IS_WIN, WIN_VER, executable_exists
+from .GeneralUtilities import IS_MACOS, IS_WIN, WIN_VER, executable_exists
 
 
 NOTIFY_LOW = 0

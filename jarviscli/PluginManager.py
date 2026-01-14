@@ -3,8 +3,8 @@ from functools import partial
 
 import pluginmanager
 
-import plugin
-from utilities.GeneralUtilities import warning, error, executable_exists
+from . import plugin
+from .utilities.GeneralUtilities import warning, error, executable_exists
 
 
 class PluginManager(object):

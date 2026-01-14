@@ -1,4 +1,4 @@
-from plugin import plugin
+from ..plugin import plugin
 import smtplib
 import requests
 import os

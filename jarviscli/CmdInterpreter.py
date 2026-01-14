@@ -7,13 +7,13 @@ from functools import partial
 
 from colorama import Fore
 
-from packages.memory.memory import Memory
-from PluginManager import PluginManager
-from utilities import schedule
-from utilities.animations import SpinnerThread
-from utilities.GeneralUtilities import get_parent_directory
-from utilities.notification import notify
-from utilities.voice import create_voice
+from .packages.memory.memory import Memory
+from .PluginManager import PluginManager
+from .utilities import schedule
+from .utilities.animations import SpinnerThread, icon_cycle
+from .utilities.GeneralUtilities import get_parent_directory
+from .utilities.notification import notify
+from .utilities.voice import create_voice
 
 
 class JarvisAPI(object):
@@ -45,6 +45,16 @@ class JarvisAPI(object):
         print(color + text + Fore.RESET, flush=True)
 
         if speak:
+            # run icon animation in background thread (non-blocking)
+            try:
+                import threading
+                folder = os.path.join(os.path.dirname(__file__), '..', 'icons')
+                t = threading.Thread(target=icon_cycle, args=(folder, 0.4, 4))
+                t.daemon = True
+                t.start()
+            except Exception:
+                pass
+
             self._jarvis.speak(text)
 
     def input(self, prompt="", color=""):
@@ -144,7 +154,13 @@ class JarvisAPI(object):
         Use text to speech for every text passed to jarvis.say()
         """
         g = self.get_data('gtts_status')
-        self._jarvis.speech = create_voice(self, g, rate=120)
+        lang = self.get_data('voice_language') or 'en'
+        gender = self.get_data('voice_gender') or 'female'
+        try:
+            self._jarvis.speech = create_voice(self, g, rate=120, lang=lang, gender=gender)
+        except Exception:
+            # fallback to default creation
+            self._jarvis.speech = create_voice(self, g, rate=120)
         self._jarvis.enable_voice = True
         self.update_data('enable_voice', True)
 
@@ -207,6 +223,16 @@ class JarvisAPI(object):
         """
         self._jarvis.memory.update_data(key, value)
         self._jarvis.memory.save()
+        # if voice settings changed, recreate speech engine
+        if key in ('voice_language', 'voice_gender', 'gtts_status'):
+            try:
+                if self._jarvis.enable_voice:
+                    g = self.get_data('gtts_status')
+                    lang = self.get_data('voice_language') or 'en'
+                    gender = self.get_data('voice_gender') or 'female'
+                    self._jarvis.speech = create_voice(self, g, rate=120, lang=lang, gender=gender)
+            except Exception:
+                pass
 
     def del_data(self, key):
         """

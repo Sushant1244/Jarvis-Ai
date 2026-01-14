@@ -1,5 +1,5 @@
 from colorama import Fore
-from plugin import LINUX, UNIX, MACOS, WINDOWS, plugin, require
+from ..plugin import LINUX, UNIX, MACOS, WINDOWS, plugin, require
 
 
 @plugin('enable sound')

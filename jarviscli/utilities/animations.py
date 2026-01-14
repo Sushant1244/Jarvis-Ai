@@ -30,3 +30,26 @@ class SpinnerThread(threading.Thread):
         self.join()
         sys.stdout.write('\r')
         sys.stdout.flush()
+
+
+def icon_cycle(folder, delay=0.5, count=6):
+    """Simple icon cycle that prints icon filenames (terminal-only demo).
+    folder: absolute path to icons dir
+    """
+    import os
+    icons = []
+    try:
+        for f in os.listdir(folder):
+            if f.lower().endswith(('.png', '.ico', '.jpg', '.jpeg')):
+                icons.append(f)
+    except Exception:
+        icons = []
+
+    if not icons:
+        print('(no icons found)')
+        return
+
+    import time
+    for i in range(count):
+        print(f'Animating: {icons[i % len(icons)]}')
+        time.sleep(delay)
