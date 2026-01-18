@@ -1,25 +1,36 @@
-import sys
-import time
+"""Lightweight animation utilities used by the CLI.
+
+This module intentionally avoids printing or opening icon files. The
+`icon_cycle` helper returns a short list of icon basenames for a UI or
+notification layer to animate; the UI should control presentation and
+avoid launching files directly.
+"""
+
 import itertools
+import sys
 import threading
+import time
+import os
 
 
 class SpinnerThread(threading.Thread):
-    """SpinnerThread class to show a spinner on
-     command line while the program is running"""
+    """Simple terminal spinner for CLI feedback.
+
+    Prints a single-character rotating spinner to stdout while running.
+    """
 
     def __init__(self, label="Hmmm... ", delay=0.2):
-        super(SpinnerThread, self).__init__()
+        super().__init__()
         self.label = label
         self.delay = delay
         self.running = False
 
     def start(self):
         self.running = True
-        super(SpinnerThread, self).start()
+        super().start()
 
     def run(self):
-        chars = itertools.cycle(r'-\|/')
+        chars = itertools.cycle(r'-\\|/')
         while self.running:
             sys.stdout.write('\r' + self.label + next(chars))
             sys.stdout.flush()
@@ -33,23 +44,18 @@ class SpinnerThread(threading.Thread):
 
 
 def icon_cycle(folder, delay=0.5, count=6):
-    """Simple icon cycle that prints icon filenames (terminal-only demo).
-    folder: absolute path to icons dir
+    """Return a short list of icon basenames from `folder`.
+
+    This helper is intentionally silent: it does not print to stdout or
+    open icon files. The UI or notification layer should iterate the returned
+    list and handle any presentation. Returns an empty list if no icons are found.
     """
-    import os
-    icons = []
     try:
-        for f in os.listdir(folder):
-            if f.lower().endswith(('.png', '.ico', '.jpg', '.jpeg')):
-                icons.append(f)
+        names = [f for f in os.listdir(folder) if f.lower().endswith(('.png', '.ico', '.jpg', '.jpeg'))]
     except Exception:
-        icons = []
+        return []
 
-    if not icons:
-        print('(no icons found)')
-        return
+    if not names:
+        return []
 
-    import time
-    for i in range(count):
-        print(f'Animating: {icons[i % len(icons)]}')
-        time.sleep(delay)
+    return [names[i % len(names)] for i in range(count)]
